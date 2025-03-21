@@ -13,28 +13,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Ticket {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  status      Status   @default(NEW)
-  priority    Priority @default(MEDIUM)
-  assignedTo  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-enum Status {
-  NEW
-  OPEN
-  IN_PROGRESS
+enum TicketStatus {
+  PENDING
+  ACCEPTED
   RESOLVED
-  CLOSED
+  REJECTED
 }
 
-enum Priority {
-  LOW
-  MEDIUM
-  HIGH
-  URGENT
+model Ticket {
+  id          String       @id @default(cuid())
+  title       String
+  description String
+  contactInfo String
+  status      TicketStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
