@@ -1,12 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-
-interface LoginModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onLogin: (username: string, password: string) => Promise<void>
-}
+import { LoginModalProps } from '../../lib/type'
 
 export default function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
   const [username, setUsername] = useState('')

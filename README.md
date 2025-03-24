@@ -2,11 +2,13 @@
 
 cd helpdesk-app
 
-docker-compose up -d
-
+for docker
+docker-compose up --build -d
 docker-compose ps
 
+for db
 npx prisma migrate dev
+npx prisma generate      
 
 ิีbun run dev
 
@@ -21,13 +23,19 @@ npx ts-node --project ../tsconfig.scripts.json hash-passwords.ts
 - Tailwind CSS
 - PostgreSQL
 - Prisma ORM
-- React Beautiful DnD
 
 ## API Endpoints
+
+- `POST /api/auth/login` - 
+- `POST /api/auth/logout` - 
+- `GET /api/auth/session` - 
 
 - `GET /api/tickets` - Get all tickets
 - `POST /api/tickets` - Create a new ticket
 - `PATCH /api/tickets/[id]` - Update a ticket
+- `PATCH /api/tickets/[id]/assign` - 
+
+- `GET /api/users` - 
 
 ## Prerequisites
 
@@ -35,3 +43,11 @@ npx ts-node --project ../tsconfig.scripts.json hash-passwords.ts
 - PostgreSQL
 - Bun
 - Docker
+
+user
+
+userA
+userB
+employeeA
+employeeB
+AdminC
