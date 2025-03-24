@@ -13,11 +13,28 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  USER
+  EMPLOYEE
+  ADMIN
+}
+
 enum TicketStatus {
   PENDING
   ACCEPTED
   RESOLVED
   REJECTED
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tickets   Ticket[]
+  accepted  Ticket[] @relation("AcceptedTickets")
 }
 
 model Ticket {
@@ -28,4 +45,8 @@ model Ticket {
   status      TicketStatus @default(PENDING)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  createdBy   User         @relation(fields: [userId], references: [id])
+  userId      String
+  acceptedBy  User?        @relation("AcceptedTickets", fields: [acceptedById], references: [id])
+  acceptedById String?
 }

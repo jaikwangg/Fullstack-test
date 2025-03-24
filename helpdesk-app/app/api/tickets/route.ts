@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../lib/prisma'
 import { z } from 'zod'
+import { cookies } from 'next/headers';
+import { TicketStatus, UserRole } from '@prisma/client';
 
 const createTicketSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -8,24 +10,62 @@ const createTicketSchema = z.object({
   contactInfo: z.string().min(1, 'Contact information is required'),
 })
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json()
-    const validatedData = createTicketSchema.parse(body)
+    const cookieStore = cookies();
+    const userCookie = cookieStore.get('session-user');
+    if (!userCookie) {
+      return NextResponse.json({ error: 'Unauthorized: no user cookie' }, { status: 401 });
+    }
+
+    const body = await req.json();
+
+
+    let user;
+
+    try {
+      user = JSON.parse(userCookie.value); 
+    } catch (err) {
+      console.error('Invalid user cookie:', err);
+      return NextResponse.json({ error: 'Invalid user cookie' }, { status: 401 });
+    }
+
+    if (!user || !user.id || !user.role) {
+      return NextResponse.json({ error: 'Invalid user in cookie' }, { status: 401 });
+    }
+
+    if (user.role !== UserRole.USER) {
+      return new NextResponse(
+        JSON.stringify({ message: 'Forbidden: only users can create tickets' }),
+        { status: 403 }
+      );
+    }
+
+    const { title, description, contactInfo} = createTicketSchema.parse(body);
+    if (!title || !description || !contactInfo) {
+      return new NextResponse(
+        JSON.stringify({ message: 'Missing title, description, or contactInfo' }),
+        { status: 400 }
+      );
+    }
+
 
     const ticket = await prisma.ticket.create({
       data: {
-        ...validatedData,
-        status: 'PENDING',
+        title,
+        description,
+        contactInfo,
+        status: TicketStatus.PENDING,
+        userId: user.id,
       },
     })
 
     return NextResponse.json(ticket)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
-    }
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+    console.error('Error creating ticket:', error);
+    return new NextResponse(JSON.stringify({ message: 'Internal server error' }), {
+      status: 500,
+    });
   }
 }
 
@@ -46,6 +86,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(tickets)
   } catch (error) {
+    console.log(error)
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
   }
 } 

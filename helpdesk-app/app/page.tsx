@@ -1,18 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import { TicketStatus } from '@prisma/client'
-
-interface Ticket {
-  id: string
-  title: string
-  description: string
-  contactInfo: string
-  status: TicketStatus
-  createdAt: string
-  updatedAt: string
-}
+import { useUser } from './context/UserContext'
+import { Ticket } from '../lib/type'
 
 const statusColumns: Record<TicketStatus, Ticket[]> = {
   PENDING: [],
@@ -22,6 +13,8 @@ const statusColumns: Record<TicketStatus, Ticket[]> = {
 }
 
 export default function Home() {
+  const {user,  openLoginModal, logout} = useUser()
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [columns, setColumns] = useState(statusColumns)
   const [isCreatingTicket, setIsCreatingTicket] = useState(false)
@@ -43,18 +36,22 @@ export default function Home() {
   } | null>(null)
 
   useEffect(() => {
+    if (!user && !isLoading) {
+      openLoginModal()
+    }
+  }, [user, isLoading, openLoginModal])
+
+  useEffect(() => {
     fetchTickets()
   }, [filterStatus, sortBy, sortOrder])
 
   useEffect(() => {
     const newColumns = { ...statusColumns }
     if (Array.isArray(tickets)) {
-      // Clear all columns first
       Object.keys(newColumns).forEach((status) => {
         newColumns[status as TicketStatus] = []
       })
       
-      // Then add tickets to their respective columns
       tickets.forEach((ticket) => {
         if (filterStatus === 'ALL' || ticket.status === filterStatus) {
           newColumns[ticket.status].push(ticket)
@@ -87,32 +84,6 @@ export default function Home() {
       setTickets([])
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return
-
-    const { source, destination, draggableId } = result
-    if (source.droppableId === destination.droppableId) return
-
-    const ticket = tickets.find((t) => t.id === draggableId)
-    if (!ticket) return
-
-    const newStatus = destination.droppableId as TicketStatus
-    try {
-      const response = await fetch(`/api/tickets/${draggableId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus }),
-      })
-
-      if (response.ok) {
-        const updatedTicket = await response.json()
-        setTickets(tickets.map((t) => (t.id === draggableId ? updatedTicket : t)))
-      }
-    } catch (error) {
-      console.error('Error updating ticket:', error)
     }
   }
 
@@ -187,18 +158,70 @@ export default function Home() {
     return new Date(dateString).toLocaleString()
   }
 
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Helpdesk Tickets</h1>
+        <div className="flex items-center space-x-4">
         <button
           onClick={() => setIsCreatingTicket(true)}
           className="btn btn-primary"
         >
           Create New Ticket
         </button>
-      </div>
+        {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                className="p-2 rounded-full hover:bg-gray-200 focus:outline-none"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="w-6 h-6"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M12 2C6.477 2 2 6.477 2 12c0 5.523
+                    4.477 10 10 10s10-4.477 10-10S17.523
+                    2 12 2zm0 3a3 3 0 110 6 3 3 0 010-6zm0
+                    14.2a7.2 7.2 0 01-5.998-3.2 5.2 5.2 0
+                    0111.996 0A7.2 7.2 0 0112 19.2z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </button>
 
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white border rounded shadow-md z-10">
+                  <div className="p-2 border-b">
+                    <p className="text-sm font-medium">username : {user.username}</p>
+                    <p className="text-sm font-medium">role : {user.role}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsUserMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button onClick={openLoginModal} className="btn btn-secondary">
+              Login
+            </button>
+          )}
+        </div>
+      </div>
       <div className="mb-6 flex gap-4 items-center">
         <select
           value={filterStatus}
@@ -468,4 +491,4 @@ export default function Home() {
       )}
     </div>
   )
-} 
+}
