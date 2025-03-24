@@ -26,22 +26,23 @@ npx ts-node --project ../tsconfig.scripts.json hash-passwords.ts
 
 ## API Endpoints
 
-- `POST /api/auth/login` - 
-- `POST /api/auth/logout` - 
-- `GET /api/auth/session` - 
+- `POST /api/auth/login` - Logs a user in by verifying credentials
+- `POST /api/auth/logout` - Logs the user out by clearing or invalidating the session
+- `GET /api/auth/session` - Returns the current user session
 
 - `GET /api/tickets` - Get all tickets
 - `POST /api/tickets` - Create a new ticket
 - `PATCH /api/tickets/[id]` - Update a ticket
-- `PATCH /api/tickets/[id]/assign` - 
+- `PATCH /api/tickets/[id]/assign` - Assigns a ticket to an employee
 
-- `GET /api/users` - 
+- `GET /api/users` - Lists users, optionally by role
+    Query Parameters: role=EMPLOYEE – returns only employees
 
 ## Prerequisites
 
 - Node.js (v18 or later)
 - PostgreSQL
-- Bun
+- Bun (optional)
 - Docker
 
 user
