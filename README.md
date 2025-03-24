@@ -10,7 +10,7 @@ for db
 npx prisma migrate dev
 npx prisma generate      
 
-ิีbun run dev
+bun run dev
 
 dashboard
 npx prisma studio
